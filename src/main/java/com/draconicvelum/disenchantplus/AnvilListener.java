@@ -1,4 +1,5 @@
 package com.draconicvelum.disenchantplus;
+
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -8,6 +9,8 @@ import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.Repairable;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,9 +26,8 @@ public class AnvilListener implements Listener {
 
         if (item == null || second == null) return;
 
-
         // =========================
-        // DISENCHANT
+        // DISENCHANT PREVIEW
         // =========================
         if (Utils.isEnchanted(item) && second.getType() == Material.BOOK) {
             ItemStack result = Utils.createBookFromItem(item);
@@ -36,40 +38,33 @@ public class AnvilListener implements Listener {
         }
 
         // =========================
-        // SPLIT BOOK
+        // SPLIT PREVIEW
         // =========================
         if (Utils.isEnchantedBook(item) && second.getType() == Material.BOOK) {
-
-
 
             EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
             int total = meta.getStoredEnchants().size();
 
             int nonCurseCount = 0;
             for (Enchantment e : meta.getStoredEnchants().keySet()) {
-                if (!e.getKey().getKey().startsWith("curse")) {
+                if (!e.getKey().getKey().contains("curse")) {
                     nonCurseCount++;
                 }
             }
+
             Map.Entry<Enchantment, Integer> enchant = null;
             boolean preventCurses = Main.getInstance().getConfig().getBoolean("prevent-curses");
+
             for (Map.Entry<Enchantment, Integer> e : meta.getStoredEnchants().entrySet()) {
-                if (preventCurses) {
-                    if (e.getKey().getKey().getKey().startsWith("curse")) continue;
-                }
+                if (preventCurses && e.getKey().getKey().getKey().contains("curse")) continue;
 
                 if (enchant == null || e.getValue() > enchant.getValue()) {
                     enchant = e;
                 }
             }
 
-            // No valid enchant → stop
             if (enchant == null) return;
-
-            // ❌ Block if only curses
             if (nonCurseCount == 0) return;
-
-            // ❌ Block if only 1 enchant total (would leave empty)
             if (total <= 1) return;
 
             ItemStack newBook = new ItemStack(Material.ENCHANTED_BOOK);
@@ -79,22 +74,19 @@ public class AnvilListener implements Listener {
 
             ItemMeta displayMeta = newBook.getItemMeta();
 
-            String name = enchant.getKey().getKey().getKey()
-                    .replace("_", " ")
-                    .toLowerCase();
-
-            String[] words = name.split(" ");
+            String raw = enchant.getKey().getKey().getKey().replace("_", " ").toLowerCase();
             StringBuilder formatted = new StringBuilder();
 
-            for (String word : words) {
-                if (word.isEmpty()) continue;
-                formatted.append(Character.toUpperCase(word.charAt(0)))
-                        .append(word.substring(1))
-                        .append(" ");
+            for (String word : raw.split(" ")) {
+                if (!word.isEmpty()) {
+                    formatted.append(Character.toUpperCase(word.charAt(0)))
+                            .append(word.substring(1)).append(" ");
+                }
             }
 
             displayMeta.setDisplayName("§a" + formatted.toString().trim() + " " + enchant.getValue());
             newBook.setItemMeta(displayMeta);
+
             event.setResult(newBook);
         }
     }
@@ -129,11 +121,10 @@ public class AnvilListener implements Listener {
 
             XPUtils.removeXP(player, cost);
 
-            // Create result book
             ItemStack book = Utils.createBookFromItem(item);
             if (book == null) return;
 
-            // 🔥 FULL CLEAN RESET (fixes ALL hidden data issues)
+            // 🔥 FULL CLEAN RESET
             ItemStack cleanItem = new ItemStack(item.getType(), item.getAmount());
 
             ItemMeta oldMeta = item.getItemMeta();
@@ -141,48 +132,91 @@ public class AnvilListener implements Listener {
 
             if (oldMeta != null && newMeta != null) {
 
-                // Copy display name
-                if (oldMeta.hasDisplayName()) {
-                    newMeta.setDisplayName(oldMeta.getDisplayName());
+                if (oldMeta.hasDisplayName()) newMeta.setDisplayName(oldMeta.getDisplayName());
+                if (oldMeta.hasLore()) newMeta.setLore(oldMeta.getLore());
+
+                for (ItemFlag flag : oldMeta.getItemFlags()) {
+                    newMeta.addItemFlags(flag);
                 }
 
-                // Copy lore
-                if (oldMeta.hasLore()) {
-                    newMeta.setLore(oldMeta.getLore());
+                newMeta.setUnbreakable(oldMeta.isUnbreakable());
+
+                if (oldMeta.hasCustomModelData()) {
+                    newMeta.setCustomModelData(oldMeta.getCustomModelData());
                 }
 
-                // Copy flags
-                newMeta.getItemFlags().forEach(newMeta::addItemFlags);
+                if (oldMeta.hasAttributeModifiers()) {
+                    var modifiers = oldMeta.getAttributeModifiers();
+                    if (modifiers != null) {
+                        for (var entry : modifiers.entries()) {
+                            newMeta.addAttributeModifier(entry.getKey(), entry.getValue());
+                        }
+                    }
+                }
 
-                // 🔥 IMPORTANT: reset repair cost
+                var oldContainer = oldMeta.getPersistentDataContainer();
+                var newContainer = newMeta.getPersistentDataContainer();
+
+                for (NamespacedKey key : oldContainer.getKeys()) {
+
+                    if (oldContainer.has(key, PersistentDataType.STRING)) {
+                        newContainer.set(key, PersistentDataType.STRING,
+                                oldContainer.get(key, PersistentDataType.STRING));
+
+                    } else if (oldContainer.has(key, PersistentDataType.INTEGER)) {
+                        newContainer.set(key, PersistentDataType.INTEGER,
+                                oldContainer.get(key, PersistentDataType.INTEGER));
+
+                    } else if (oldContainer.has(key, PersistentDataType.DOUBLE)) {
+                        newContainer.set(key, PersistentDataType.DOUBLE,
+                                oldContainer.get(key, PersistentDataType.DOUBLE));
+
+                    } else if (oldContainer.has(key, PersistentDataType.BYTE)) {
+                        newContainer.set(key, PersistentDataType.BYTE,
+                                oldContainer.get(key, PersistentDataType.BYTE));
+
+                    } else if (oldContainer.has(key, PersistentDataType.LONG)) {
+                        newContainer.set(key, PersistentDataType.LONG,
+                                oldContainer.get(key, PersistentDataType.LONG));
+                    }
+                }
+
                 if (newMeta instanceof Repairable repairable) {
                     repairable.setRepairCost(0);
                 }
 
                 cleanItem.setItemMeta(newMeta);
+                cleanItem = cleanItem.clone(); // forces full NBT refresh
             }
 
-            // Set cleaned item back
             inv.setItem(0, cleanItem);
 
-            // Clear second slot (important)
+            // consume 1 book
             ItemStack newSecond = second.clone();
 
             if (newSecond.getAmount() > 1) {
                 newSecond.setAmount(newSecond.getAmount() - 1);
-                inv.setItem(1, newSecond);
+
+                inv.setItem(1, null);
+
+                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                    inv.setItem(1, newSecond);
+                });
+
             } else {
                 inv.setItem(1, null);
             }
+            Bukkit.getScheduler().runTask(Main.getInstance(), player::updateInventory);
 
-            // Give book to player
+            // give result
             HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(book);
             for (ItemStack drop : leftover.values()) {
                 player.getWorld().dropItemNaturally(player.getLocation(), drop);
             }
 
-            // Force sync (VERY IMPORTANT)
-            player.updateInventory();
+            inv.setItem(2, null);
+
+            Bukkit.getScheduler().runTask(Main.getInstance(), player::updateInventory);
 
             playEffect(player, "disenchant");
             event.setCancelled(true);
@@ -199,42 +233,37 @@ public class AnvilListener implements Listener {
 
             int nonCurseCount = 0;
             for (Enchantment e : meta.getStoredEnchants().keySet()) {
-                if (!e.getKey().getKey().startsWith("curse")) {
+                if (!e.getKey().getKey().contains("curse")) {
                     nonCurseCount++;
                 }
             }
-            Map.Entry<Enchantment, Integer> enchant = null;
 
+            Map.Entry<Enchantment, Integer> enchant = null;
             boolean preventCurses = config.getBoolean("prevent-curses");
 
             for (Map.Entry<Enchantment, Integer> e : meta.getStoredEnchants().entrySet()) {
-                if (preventCurses) {
-                    if (e.getKey().getKey().getKey().startsWith("curse")) continue;
-                }
+                if (preventCurses && e.getKey().getKey().getKey().contains("curse")) continue;
 
                 if (enchant == null || e.getValue() > enchant.getValue()) {
                     enchant = e;
                 }
             }
 
-            // No valid enchant → stop
             if (enchant == null) {
-                event.setCancelled(true);
                 player.sendMessage("§cNo valid enchantments to split!");
+                event.setCancelled(true);
                 return;
             }
 
-            // ❌ Only curses → block
             if (nonCurseCount == 0) {
-                event.setCancelled(true);
                 player.sendMessage("§cCannot split curse-only books!");
+                event.setCancelled(true);
                 return;
             }
 
-            // ❌ Would leave empty
             if (total <= 1) {
-                event.setCancelled(true);
                 player.sendMessage("§cCannot split the last enchantment!");
+                event.setCancelled(true);
                 return;
             }
 
@@ -248,54 +277,55 @@ public class AnvilListener implements Listener {
 
             XPUtils.removeXP(player, cost);
 
-            // REMOVE FROM ORIGINAL
             meta.removeStoredEnchant(enchant.getKey());
+
             if (meta instanceof Repairable repairable) {
                 repairable.setRepairCost(0);
             }
+
             item.setItemMeta(meta);
 
-            // GIVE NEW BOOK
             ItemStack newBook = new ItemStack(Material.ENCHANTED_BOOK);
             EnchantmentStorageMeta newMeta = (EnchantmentStorageMeta) newBook.getItemMeta();
             newMeta.addStoredEnchant(enchant.getKey(), enchant.getValue(), true);
             newBook.setItemMeta(newMeta);
 
             HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(newBook);
-            for (ItemStack itemDrop : leftover.values()) {
-                player.getWorld().dropItemNaturally(player.getLocation(), itemDrop);
+            for (ItemStack drop : leftover.values()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), drop);
             }
 
             inv.setItem(0, item);
 
-            // ✅ consume 1 book safely (clone to avoid reference bugs)
             ItemStack newSecond = second.clone();
 
             if (newSecond.getAmount() > 1) {
                 newSecond.setAmount(newSecond.getAmount() - 1);
-                inv.setItem(1, newSecond);
+
+                inv.setItem(1, null);
+
+                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                    inv.setItem(1, newSecond);
+                });
+
             } else {
                 inv.setItem(1, null);
             }
+
             inv.setItem(2, null);
-            Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
-                player.updateInventory();
-            });
-            player.updateInventory();
+
+            Bukkit.getScheduler().runTask(Main.getInstance(), player::updateInventory);
+
             playEffect(player, "split");
 
-            String raw = enchant.getKey().getKey().getKey()
-                    .replace("_", " ")
-                    .toLowerCase();
-
-            String[] words = raw.split(" ");
+            String raw = enchant.getKey().getKey().getKey().replace("_", " ").toLowerCase();
             StringBuilder formatted = new StringBuilder();
 
-            for (String word : words) {
-                if (word.isEmpty()) continue;
-                formatted.append(Character.toUpperCase(word.charAt(0)))
-                        .append(word.substring(1))
-                        .append(" ");
+            for (String word : raw.split(" ")) {
+                if (!word.isEmpty()) {
+                    formatted.append(Character.toUpperCase(word.charAt(0)))
+                            .append(word.substring(1)).append(" ");
+                }
             }
 
             player.sendMessage("§aExtracted " + formatted.toString().trim() + " " + enchant.getValue() + "!");
@@ -321,7 +351,6 @@ public class AnvilListener implements Listener {
             if (sound != null) {
                 player.playSound(player.getLocation(), sound, 1f, 1f);
             } else {
-                // Optional fallback
                 player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
             }
         } catch (Exception ignored) {}
