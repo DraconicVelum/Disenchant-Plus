@@ -9,9 +9,6 @@ import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.Repairable;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.persistence.PersistentDataType;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -124,74 +121,23 @@ public class AnvilListener implements Listener {
             ItemStack book = Utils.createBookFromItem(item);
             if (book == null) return;
 
-            // 🔥 FULL CLEAN RESET
-            ItemStack cleanItem = new ItemStack(item.getType(), item.getAmount());
+            ItemStack cleanItem = item.clone();
+            ItemMeta meta = cleanItem.getItemMeta();
 
-            ItemMeta oldMeta = item.getItemMeta();
-            ItemMeta newMeta = cleanItem.getItemMeta();
+            if (meta != null) {
+                meta.getEnchants().keySet().forEach(meta::removeEnchant);
 
-            if (oldMeta != null && newMeta != null) {
-
-                if (oldMeta.hasDisplayName()) newMeta.setDisplayName(oldMeta.getDisplayName());
-                if (oldMeta.hasLore()) newMeta.setLore(oldMeta.getLore());
-
-                for (ItemFlag flag : oldMeta.getItemFlags()) {
-                    newMeta.addItemFlags(flag);
-                }
-
-                newMeta.setUnbreakable(oldMeta.isUnbreakable());
-
-                if (oldMeta.hasCustomModelData()) {
-                    newMeta.setCustomModelData(oldMeta.getCustomModelData());
-                }
-
-                if (oldMeta.hasAttributeModifiers()) {
-                    var modifiers = oldMeta.getAttributeModifiers();
-                    if (modifiers != null) {
-                        for (var entry : modifiers.entries()) {
-                            newMeta.addAttributeModifier(entry.getKey(), entry.getValue());
-                        }
-                    }
-                }
-
-                var oldContainer = oldMeta.getPersistentDataContainer();
-                var newContainer = newMeta.getPersistentDataContainer();
-
-                for (NamespacedKey key : oldContainer.getKeys()) {
-
-                    if (oldContainer.has(key, PersistentDataType.STRING)) {
-                        newContainer.set(key, PersistentDataType.STRING,
-                                oldContainer.get(key, PersistentDataType.STRING));
-
-                    } else if (oldContainer.has(key, PersistentDataType.INTEGER)) {
-                        newContainer.set(key, PersistentDataType.INTEGER,
-                                oldContainer.get(key, PersistentDataType.INTEGER));
-
-                    } else if (oldContainer.has(key, PersistentDataType.DOUBLE)) {
-                        newContainer.set(key, PersistentDataType.DOUBLE,
-                                oldContainer.get(key, PersistentDataType.DOUBLE));
-
-                    } else if (oldContainer.has(key, PersistentDataType.BYTE)) {
-                        newContainer.set(key, PersistentDataType.BYTE,
-                                oldContainer.get(key, PersistentDataType.BYTE));
-
-                    } else if (oldContainer.has(key, PersistentDataType.LONG)) {
-                        newContainer.set(key, PersistentDataType.LONG,
-                                oldContainer.get(key, PersistentDataType.LONG));
-                    }
-                }
-
-                if (newMeta instanceof Repairable repairable) {
+                if (meta instanceof Repairable repairable) {
                     repairable.setRepairCost(0);
                 }
 
-                cleanItem.setItemMeta(newMeta);
-                cleanItem = cleanItem.clone(); // forces full NBT refresh
+                cleanItem.setItemMeta(meta);
             }
 
-            inv.setItem(0, cleanItem);
+            Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                inv.setItem(0, cleanItem);
+            });
 
-            // consume 1 book
             ItemStack newSecond = second.clone();
 
             if (newSecond.getAmount() > 1) {
