@@ -32,7 +32,7 @@ Fully configurable via config.</p><br>
 ---
 
 ### <p align="center">🧩 Requirements</p>
-<p align="center">- Paper / Spigot / Bukkit (1.20+ / 26.1 API)</p>
+<p align="center">Paper / Spigot / Bukkit (1.20+ / 26.1 API)</p>
 
 ---
 
