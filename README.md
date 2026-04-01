@@ -91,3 +91,10 @@ sounds:
   enabled: true
   disenchant: "block.enchantment_table.use"
   split: "entity.experience_orb.pickup"
+
+```
+
+---
+
+## Disclaimer
+This plugin was made with the use of AI, alongside the image.
