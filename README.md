@@ -1,4 +1,4 @@
-# <p align="center">DisenchantPlus ✨</p>
+# <p align="center">Disenchant Plus ✨</p>
 
 <p align="center"> <a href="https://github.com/DraconicVelum/Disenchant-Plus/releases/latest"><img alt="undefined" src="https://img.shields.io/github/release/DraconicVelum/Disenchant-Plus.svg?style=popout"></a>
 <a href="https://github.com/DraconicVelum/Disenchant-Plus/blob/main/LICENSE"><img alt="undefined" src="https://img.shields.io/github/license/DraconicVelum/Disenchant-Plus.svg?style=popout"></a>
@@ -6,80 +6,43 @@
 
 ---
 
-## ✨ Description
-Take full control over enchantments using the anvil!  
-This plugin adds powerful and balanced mechanics for:
-
-- 📖 Disenchanting items into enchanted books  
-- ✂️ Splitting enchanted books into individual enchants  
-- 🎚️ Configurable XP costs for all actions  
-- 🛡️ Optional curse protection  
+<p align="center">Disenchant Plus enhances the vanilla Minecraft anvil <br>
+by introducing powerful and balanced mechanics to extract and split enchantments using XP.<br><br>
+It gives players more control over enchantments without breaking progression,<br>
+making it perfect for survival servers, RPG setups, and economy-based gameplay.<br><br>
+Take full control over enchantments using the anvil!</p>
 
 ---
 
-### ➕ Advanced Enchantment Control
+### <p align="center">Disenchant Items</p>
+<p align="center">Convert any enchanted item into an enchanted book.<br>
+Removes all enchantments while preserving item data.</p><br>
 
-- 📖 **Disenchant Items**  
-  Convert any enchanted item into an enchanted book.  
-  ↳ Removes all enchantments while preserving item data.
+### <p align="center">Split Enchanted Books</p>
+<p align="center">Extract the highest-level enchantment from a book.<br>
+Creates a new book and updates the original.</p><br>
 
-- ✂️ **Split Enchanted Books**  
-  Extract the highest-level enchantment from a book.  
-  ↳ Creates a new book and updates the original.
+### <p align="center">Effects & Feedback</p>
+<p align="center">Custom sounds and particles for each action.<br>
+Fully configurable via config.</p><br>
 
-- 🚫 **Curse Protection**  
-  Prevent curse enchantments from being extracted or split.
-
-- 🎧 **Effects & Feedback**  
-  Custom sounds and particles for each action.  
-  ↳ Fully configurable via config.
+### <p align="center">Live Anvil Preview</p>
+<p align="center">See results before confirming actions.</p>
 
 ---
 
-### 🧠 Smart System
-
-- 🔍 **Live Anvil Preview**  
-  See results before confirming actions.
-
-- 🧼 **Clean Item Rebuild**  
-  Items are rebuilt to ensure no broken or leftover NBT.
-
-- 🔄 **Safe Inventory Handling**  
-  Prevents duplication, handles overflow, and sync issues.
+### <p align="center">🧩 Requirements</p>
+<p align="center">- Paper / Spigot / Bukkit (1.20+ / 26.1 API)</p>
 
 ---
 
-### 💾 Preserved Data
-Disenchanting keeps all important item data:
-
-- 🏷️ Display name  
-- 📜 Lore  
-- 🎨 Custom model data  
-- ⚔️ Attribute modifiers  
-- 🔒 Unbreakable state  
-- 🧬 Persistent data (NBT)  
-- 🚩 Item flags  
+### <p align="center">⚙️ Installation</p>
+<p align="center">1. Drop the plugin ".jar" into your plugins folder.</p>
+<p align="center">2. Restart your server.</p>
 
 ---
 
-Adjust values in the config file:
-
-`plugins/DisenchantPlus/config.yml`
-
----
-
-## 🧩 Requirements
-- Paper / Spigot / Bukkit (1.20+ / 26.1 API)
-
----
-
-## ⚙️ Installation
-1. Drop the plugin `.jar` into your `plugins` folder.
-2. Restart your server.
-
----
-
-## ⚙️ Configuration Example
+### <p align="center">⚙️ Configuration Example</p>
 
 ```yaml
 disenchant-xp: 10
@@ -96,5 +59,5 @@ sounds:
 
 ---
 
-## Disclaimer
-This plugin was made with the use of AI, alongside the image.
+### <p align="center">Disclaimer</p>
+<p align="center">This plugin was made with the use of AI, alongside the image.</p>
