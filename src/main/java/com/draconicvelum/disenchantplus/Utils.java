@@ -24,7 +24,7 @@ public class Utils {
         ItemStack book = new ItemStack(org.bukkit.Material.ENCHANTED_BOOK);
 
         if (!(book.getItemMeta() instanceof EnchantmentStorageMeta meta)) {
-            return book; // fallback (should never happen, but safe)
+            return book;
         }
 
         for (Map.Entry<Enchantment, Integer> e : item.getEnchantments().entrySet()) {
