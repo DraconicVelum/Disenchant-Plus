@@ -60,4 +60,4 @@ sounds:
 ---
 
 ### <p align="center">Disclaimer</p>
-<p align="center">This plugin was made with the use of AI, alongside the image.</p>
+<p align="center">This plugin was made with the use of AI.</p>
