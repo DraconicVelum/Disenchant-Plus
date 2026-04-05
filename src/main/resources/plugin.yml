@@ -1,6 +1,10 @@
 name: DisenchantPlus
-version: 1.2
+version: 1.3
 main: com.draconicvelum.disenchantplus.Main
 api-version: 1.21
 description: Disenchanting and Book Splitting plugin
 author: Draconic Velum
+
+softdepend:
+  - TaxlessEnchanting
+  - AuraSkills
