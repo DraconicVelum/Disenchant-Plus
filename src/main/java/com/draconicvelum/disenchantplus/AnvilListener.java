@@ -109,14 +109,29 @@ public class AnvilListener implements Listener {
         if (Utils.isEnchanted(item) && !(item.getItemMeta() instanceof EnchantmentStorageMeta)) {
 
             int cost = config.getInt("disenchant-xp");
+            int xpCost = resolveXPCost(cost);
 
-            if (XPUtils.getTotalXP(player) < cost) {
+            if (getPlayerXP(player) < xpCost) {
                 player.sendMessage("§cNot enough XP!");
                 event.setCancelled(true);
                 return;
             }
 
-            XPUtils.removeXP(player, cost);
+            removeXP(player, xpCost);
+            if (AuraSkillsHook.isEnabled()) {
+
+                int totalLevels = item.getEnchantments().entrySet().stream()
+                        .filter(e -> !e.getKey().getKey().getKey().contains("curse"))
+                        .mapToInt(Map.Entry::getValue)
+                        .sum();
+
+                double perEnchant = Main.getInstance().getConfig()
+                        .getDouble("auraskills.xp.disenchant.per-enchant");
+
+                double xp = totalLevels * perEnchant;
+
+                AuraSkillsHook.giveXP(player, xp);
+            }
 
             ItemStack book = Utils.createBookFromItem(item);
             if (book == null) return;
@@ -134,9 +149,7 @@ public class AnvilListener implements Listener {
                 cleanItem.setItemMeta(meta);
             }
 
-            Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
-                inv.setItem(0, cleanItem);
-            });
+            Bukkit.getScheduler().runTask(Main.getInstance(), () -> inv.setItem(0, cleanItem));
 
             ItemStack newSecond = second.clone();
 
@@ -145,9 +158,7 @@ public class AnvilListener implements Listener {
 
                 inv.setItem(1, null);
 
-                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
-                    inv.setItem(1, newSecond);
-                });
+                Bukkit.getScheduler().runTask(Main.getInstance(), () -> inv.setItem(1, newSecond));
 
             } else {
                 inv.setItem(1, null);
@@ -214,15 +225,22 @@ public class AnvilListener implements Listener {
             }
 
             int cost = config.getInt("split-xp");
+            int xpCost = resolveXPCost(cost);
 
-            if (XPUtils.getTotalXP(player) < cost) {
+            if (getPlayerXP(player) < xpCost) {
                 player.sendMessage("§cNot enough XP!");
                 event.setCancelled(true);
                 return;
             }
 
-            XPUtils.removeXP(player, cost);
+            removeXP(player, xpCost);
+            if (AuraSkillsHook.isEnabled()) {
 
+                double xp = Main.getInstance().getConfig()
+                        .getDouble("auraskills.xp.split");
+
+                AuraSkillsHook.giveXP(player, xp);
+            }
             meta.removeStoredEnchant(enchant.getKey());
 
             if (meta instanceof Repairable repairable) {
@@ -250,9 +268,7 @@ public class AnvilListener implements Listener {
 
                 inv.setItem(1, null);
 
-                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
-                    inv.setItem(1, newSecond);
-                });
+                Bukkit.getScheduler().runTask(Main.getInstance(), () -> inv.setItem(1, newSecond));
 
             } else {
                 inv.setItem(1, null);
@@ -302,5 +318,49 @@ public class AnvilListener implements Listener {
         } catch (Exception ignored) {}
 
         player.spawnParticle(Particle.ENCHANT, player.getLocation(), 30);
+    }
+
+    private int resolveXPCost(int cost) {
+        var config = Main.getInstance().getConfig();
+        String mode = config.getString("xp-mode", "XP").toUpperCase();
+
+        if (mode.equals("LEVELS")) {
+            if (Main.isTaxlessEnabled()) {
+                try {
+                    return com.draconicvelum.taxlessenchanting.api.TaxlessAPI.levelsToXP(cost);
+                } catch (NoClassDefFoundError ignored) {}
+            }
+
+            // fallback if Taxless not present
+            return levelsToVanillaXP(cost);
+        }
+
+        // Default: RAW XP (what you want)
+        return cost;
+    }
+
+    private int getPlayerXP(Player player) {
+        if (Main.isTaxlessEnabled()) {
+            try {
+                return com.draconicvelum.taxlessenchanting.api.TaxlessAPI.getPlayerXP(player);
+            } catch (NoClassDefFoundError ignored) {}
+        }
+        return XPUtils.getTotalXP(player);
+    }
+
+    private void removeXP(Player player, int amount) {
+        if (Main.isTaxlessEnabled()) {
+            try {
+                com.draconicvelum.taxlessenchanting.api.TaxlessAPI.removeXP(player, amount);
+                return;
+            } catch (NoClassDefFoundError ignored) {}
+        }
+        XPUtils.removeXP(player, amount);
+    }
+
+    private int levelsToVanillaXP(int level) {
+        if (level <= 16) return level * level + 6 * level;
+        if (level <= 31) return (int)(2.5 * level * level - 40.5 * level + 360);
+        return (int)(4.5 * level * level - 162.5 * level + 2220);
     }
 }
