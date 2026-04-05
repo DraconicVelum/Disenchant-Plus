@@ -23,9 +23,8 @@ public class Utils {
 
         ItemStack book = new ItemStack(org.bukkit.Material.ENCHANTED_BOOK);
 
-        if (!(book.getItemMeta() instanceof EnchantmentStorageMeta meta)) {
-            return book;
-        }
+        EnchantmentStorageMeta meta = (EnchantmentStorageMeta) book.getItemMeta();
+        if (meta == null) return book;
 
         for (Map.Entry<Enchantment, Integer> e : item.getEnchantments().entrySet()) {
             meta.addStoredEnchant(e.getKey(), e.getValue(), true);
