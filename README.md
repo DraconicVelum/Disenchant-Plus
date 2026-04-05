@@ -45,8 +45,10 @@ Fully configurable via config.</p><br>
 ### <p align="center">⚙️ Configuration Example</p>
 
 ```yaml
-disenchant-xp: 10
-split-xp: 5
+disenchant-xp: 100
+split-xp: 50
+
+xp-mode: XP # XP or LEVELS
 
 prevent-curses: true
 
@@ -55,6 +57,12 @@ sounds:
   disenchant: "block.enchantment_table.use"
   split: "entity.experience_orb.pickup"
 
+auraskills:
+  enabled: true
+  xp:
+    disenchant:
+      per-enchant: 4.0
+    split: 2.5
 ```
 
 ---
